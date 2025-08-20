@@ -1,14 +1,7 @@
-from semantic_kernel.connectors.azure_ai_search import AzureAISearchStore
 import os
 import asyncio
-from typing import List
 from dotenv import load_dotenv
 from openai import AzureOpenAI
-from dataclasses import dataclass
-from typing import Annotated
-from semantic_kernel.data.vector import VectorStoreField, vectorstoremodel
-from semantic_kernel.connectors.azure_ai_search import AzureAISearchCollection
-from semantic_kernel.connectors.ai.open_ai import AzureTextEmbedding
 
 load_dotenv()
 
@@ -32,31 +25,6 @@ embed_client = AzureOpenAI(
     azure_endpoint=AOAI_ENDPOINT,
 )
 
-# 1) Define your model/schema
-@vectorstoremodel
-@dataclass
-class Doc:
-    id: Annotated[str, VectorStoreField("key")]
-    title: Annotated[str, VectorStoreField("data", is_indexed=True, is_full_text_indexed=True)]
-    content: Annotated[str, VectorStoreField("data", is_indexed=True, is_full_text_indexed=True)]
-    path: Annotated[str, VectorStoreField("data")]
-    length: Annotated[int, VectorStoreField("data")]
-    # Match the field name in the index
-    embedding: Annotated[list[float] | str | None,
-                        VectorStoreField(
-                            "vector",
-                            dimensions=EMBED_DIMS,
-                            distance_function="cosine",
-                            embedding_generator=AzureTextEmbedding(
-                                deployment_name=AOAI_EMBED_DEPLOYMENT,
-                                api_key=AOAI_API_KEY,
-                                endpoint=AOAI_ENDPOINT,
-                                api_version=AOAI_API_VERSION,
-                            ),
-                        )] = None
-
-# 2) Connect to Azure AI Search (env vars or pass endpoint/key directly)
-store = AzureAISearchStore( AZURE_AI_SEARCH_ENDPOINT, AZURE_AI_SEARCH_API_KEY)
 
 
 # 3) Create an Azure OpenAI client for chat completions (RAG)
@@ -232,7 +200,7 @@ async def main(query: str):
     
 if __name__ == "__main__":
     # You can change this query to whatever you want to ask
-    user_query = "What are the eligibility requirements for Medicaid?"
+    user_query = "Which disability benefits are availabile if I become disbabled while working?"
     
     # Or pass it as a command line argument
     import sys
