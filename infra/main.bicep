@@ -7,6 +7,9 @@ targetScope = 'subscription'
 @description('The location for all resources')
 param location string = 'centralus'
 
+@description('The location for OpenAI resources (may differ from main location for quota availability)')
+param openAiLocation string = 'eastus'
+
 @description('Environment name (dev, staging, prod)')
 @allowed(['dev', 'staging', 'prod'])
 param environment string = 'dev'
@@ -102,7 +105,7 @@ module openAI 'modules/openai.bicep' = {
   scope: resourceGroup
   name: 'openai-deployment'
   params: {
-    location: location
+    location: openAiLocation
     projectName: projectName
     environment: environment
     tags: tags

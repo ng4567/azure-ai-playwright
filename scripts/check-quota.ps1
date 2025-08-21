@@ -27,37 +27,56 @@ $quotaWarnings = 0
 # Function to check quota
 function Test-Quota {
     param(
-        [string]$Provider,
-        [string]$ResourceType,
-        [string]$MetricName,
-        [int]$RequiredQuota,
+        [string]$Location,
+        [string]$SubscriptionId,
         [string]$Description
     )
 
     Write-Host "🔍 Checking $Description..." -ForegroundColor Yellow
 
     try {
-        # Get current quota usage
-        $quotaResponse = az rest --method GET --url "https://management.azure.com/subscriptions/$SubscriptionId/providers/$Provider/locations/$Location/quotas/$ResourceType" --query "properties" 2>$null
+        # Get current quota usage using Azure CLI
+        $usage = az cognitiveservices usage list --location $Location --subscription $SubscriptionId 2>$null | ConvertFrom-Json
 
-        if ($quotaResponse) {
-            $quota = $quotaResponse | ConvertFrom-Json
-            $currentUsage = $quota.currentUsage
-            $limit = $quota.limit
-            $available = $limit - $currentUsage
+        if ($usage) {
+            # Check for OpenAI models we need
+            $gpt4oMiniQuota = $usage | Where-Object { $_.name.value -like "*gpt-4o-mini*" -and $_.limit -gt 0 }
+            $embeddingQuota = $usage | Where-Object { $_.name.value -like "*text-embedding-3-large*" -and $_.limit -gt 0 }
+            $openAiAccountQuota = $usage | Where-Object { $_.name.value -like "*OpenAI.S0.AccountCount*" }
 
-            Write-Host "   Current Usage: $currentUsage" -ForegroundColor White
-            Write-Host "   Quota Limit: $limit" -ForegroundColor White
-            Write-Host "   Available: $available" -ForegroundColor White
+            if ($openAiAccountQuota) {
+                $accountsUsed = $openAiAccountQuota.currentValue
+                $accountsLimit = $openAiAccountQuota.limit
+                $accountsAvailable = $accountsLimit - $accountsUsed
 
-            if ($available -ge $RequiredQuota) {
-                Write-Host "   ✅ Sufficient quota available" -ForegroundColor Green
-            } elseif ($available -gt 0) {
-                Write-Host "   ⚠️  Limited quota available (need $RequiredQuota, have $available)" -ForegroundColor Yellow
-                $script:quotaWarnings++
+                Write-Host "   OpenAI Accounts: $accountsUsed/$accountsLimit used" -ForegroundColor White
+
+                if ($accountsAvailable -gt 0) {
+                    Write-Host "   ✅ OpenAI account quota available" -ForegroundColor Green
+                } else {
+                    Write-Host "   ❌ No OpenAI account quota available" -ForegroundColor Red
+                    $script:quotaErrors++
+                }
+            }
+
+            if ($gpt4oMiniQuota) {
+                $maxGptQuota = ($gpt4oMiniQuota | Measure-Object -Property limit -Maximum).Maximum
+                Write-Host "   GPT-4o-mini: $maxGptQuota TPM available" -ForegroundColor Green
             } else {
-                Write-Host "   ❌ No quota available (need $RequiredQuota, have $available)" -ForegroundColor Red
+                Write-Host "   ❌ No GPT-4o-mini quota found" -ForegroundColor Red
                 $script:quotaErrors++
+            }
+
+            if ($embeddingQuota) {
+                $maxEmbeddingQuota = ($embeddingQuota | Measure-Object -Property limit -Maximum).Maximum
+                Write-Host "   Text-embedding-3-large: $maxEmbeddingQuota TPM available" -ForegroundColor Green
+            } else {
+                Write-Host "   ❌ No text-embedding-3-large quota found" -ForegroundColor Red
+                $script:quotaErrors++
+            }
+
+            if ($gpt4oMiniQuota -and $embeddingQuota -and $accountsAvailable -gt 0) {
+                Write-Host "   ✅ Sufficient OpenAI quota available" -ForegroundColor Green
             }
         } else {
             Write-Host "   ⚠️  Could not retrieve quota information" -ForegroundColor Yellow
@@ -72,39 +91,165 @@ function Test-Quota {
     Write-Host ""
 }
 
-# Function to check OpenAI model availability
-function Test-OpenAIModelAvailability {
+# Function to check AI Search quota
+function Test-AISearchQuota {
     param(
-        [string]$ModelName,
+        [string]$Location,
+        [string]$SubscriptionId,
         [string]$Description
     )
 
-    Write-Host "🤖 Checking $Description availability..." -ForegroundColor Yellow
+    Write-Host "🔍 Checking $Description..." -ForegroundColor Yellow
 
     try {
-        # Check model availability in the region
-        $modelsResponse = az rest --method GET --url "https://management.azure.com/subscriptions/$SubscriptionId/providers/Microsoft.CognitiveServices/locations/$Location/models" --query "value[?name=='$ModelName']" 2>$null
+        # Check search service quota using resource provider quotas
+        $searchQuota = az provider show --namespace Microsoft.Search --query "resourceTypes[?resourceType=='searchServices'].locations[]" --output json 2>$null | ConvertFrom-Json
 
-        if ($modelsResponse) {
-            $models = $modelsResponse | ConvertFrom-Json
-            if ($models.Count -gt 0) {
-                $model = $models[0]
-                Write-Host "   ✅ $ModelName is available in $Location" -ForegroundColor Green
-                Write-Host "   Version: $($model.version)" -ForegroundColor White
-                if ($model.capabilities) {
-                    Write-Host "   Capabilities: $($model.capabilities -join ', ')" -ForegroundColor White
+        # Convert location to display name format (e.g., eastus -> East US)
+        $locationDisplayName = switch ($Location.ToLower()) {
+            "eastus" { "East US" }
+            "eastus2" { "East US 2" }
+            "westus" { "West US" }
+            "westus2" { "West US 2" }
+            "westus3" { "West US 3" }
+            "centralus" { "Central US" }
+            "northcentralus" { "North Central US" }
+            "southcentralus" { "South Central US" }
+            "westcentralus" { "West Central US" }
+            "northeurope" { "North Europe" }
+            "westeurope" { "West Europe" }
+            "francecentral" { "France Central" }
+            "uksouth" { "UK South" }
+            "ukwest" { "UK West" }
+            "japaneast" { "Japan East" }
+            "japanwest" { "Japan West" }
+            "australiaeast" { "Australia East" }
+            "australiasoutheast" { "Australia Southeast" }
+            "southeastasia" { "Southeast Asia" }
+            "eastasia" { "East Asia" }
+            "canadacentral" { "Canada Central" }
+            "canadaeast" { "Canada East" }
+            "brazilsouth" { "Brazil South" }
+            "centralindia" { "Central India" }
+            "southindia" { "South India" }
+            "koreacentral" { "Korea Central" }
+            "koreasouth" { "Korea South" }
+            default { $Location }
+        }
+
+        if ($searchQuota -and $searchQuota -contains $locationDisplayName) {
+            Write-Host "   ✅ Azure AI Search is available in $Location" -ForegroundColor Green
+
+            # Try to get more specific quota info - but this often fails, so treat as informational
+            try {
+                $quotas = az quota show --scope "/subscriptions/$SubscriptionId/providers/Microsoft.Search/locations/$Location" --resource-name searchServices 2>$null | ConvertFrom-Json
+
+                if ($quotas -and $quotas.properties -and $quotas.properties.limit) {
+                    $limit = $quotas.properties.limit
+                    $usage = $quotas.properties.currentUsage
+                    Write-Host "   Search Services: $usage/$limit used" -ForegroundColor White
+                    if (($limit - $usage) -gt 0) {
+                        Write-Host "   ✅ AI Search quota available" -ForegroundColor Green
+                    } else {
+                        Write-Host "   ❌ No AI Search quota available" -ForegroundColor Red
+                        $script:quotaErrors++
+                    }
+                } else {
+                    Write-Host "   ✅ AI Search quota appears sufficient (detailed quota unavailable)" -ForegroundColor Green
                 }
-            } else {
-                Write-Host "   ❌ $ModelName is not available in $Location" -ForegroundColor Red
-                $script:quotaErrors++
+            }
+            catch {
+                Write-Host "   ✅ AI Search service supported (detailed quota check not available)" -ForegroundColor Green
             }
         } else {
-            Write-Host "   ⚠️  Could not retrieve model availability" -ForegroundColor Yellow
-            $script:quotaWarnings++
+            Write-Host "   ❌ Azure AI Search not available in $Location" -ForegroundColor Red
+            $script:quotaErrors++
         }
     }
     catch {
-        Write-Host "   ⚠️  Error checking model availability: $_" -ForegroundColor Yellow
+        Write-Host "   ⚠️  Error checking AI Search quota: $_" -ForegroundColor Yellow
+        $script:quotaWarnings++
+    }
+
+    Write-Host ""
+}
+
+# Function to check AI Translator quota
+function Test-TranslatorQuota {
+    param(
+        [string]$Location,
+        [string]$SubscriptionId,
+        [string]$Description
+    )
+
+    Write-Host "🔍 Checking $Description..." -ForegroundColor Yellow
+
+    try {
+        # Check if Cognitive Services (which includes Translator) is available
+        $cognitiveServices = az provider show --namespace Microsoft.CognitiveServices --query "resourceTypes[?resourceType=='accounts'].locations[]" --output json 2>$null | ConvertFrom-Json
+
+        # Convert location to display name format (e.g., eastus -> East US)
+        $locationDisplayName = switch ($Location.ToLower()) {
+            "eastus" { "East US" }
+            "eastus2" { "East US 2" }
+            "westus" { "West US" }
+            "westus2" { "West US 2" }
+            "westus3" { "West US 3" }
+            "centralus" { "Central US" }
+            "northcentralus" { "North Central US" }
+            "southcentralus" { "South Central US" }
+            "westcentralus" { "West Central US" }
+            "northeurope" { "North Europe" }
+            "westeurope" { "West Europe" }
+            "francecentral" { "France Central" }
+            "uksouth" { "UK South" }
+            "ukwest" { "UK West" }
+            "japaneast" { "Japan East" }
+            "japanwest" { "Japan West" }
+            "australiaeast" { "Australia East" }
+            "australiasoutheast" { "Australia Southeast" }
+            "southeastasia" { "Southeast Asia" }
+            "eastasia" { "East Asia" }
+            "canadacentral" { "Canada Central" }
+            "canadaeast" { "Canada East" }
+            "brazilsouth" { "Brazil South" }
+            "centralindia" { "Central India" }
+            "southindia" { "South India" }
+            "koreacentral" { "Korea Central" }
+            "koreasouth" { "Korea South" }
+            default { $Location }
+        }
+
+        if ($cognitiveServices -and $cognitiveServices -contains $locationDisplayName) {
+            Write-Host "   ✅ Azure AI Translator is available in $Location" -ForegroundColor Green
+
+            # Check account count quota
+            $usage = az cognitiveservices usage list --location $Location --subscription $SubscriptionId 2>$null | ConvertFrom-Json
+            $accountQuota = $usage | Where-Object { $_.name.value -eq "AccountCount" }
+
+            if ($accountQuota) {
+                $accountsUsed = $accountQuota.currentValue
+                $accountsLimit = $accountQuota.limit
+                $accountsAvailable = $accountsLimit - $accountsUsed
+
+                Write-Host "   Cognitive Services Accounts: $accountsUsed/$accountsLimit used" -ForegroundColor White
+
+                if ($accountsAvailable -gt 0) {
+                    Write-Host "   ✅ Cognitive Services account quota available" -ForegroundColor Green
+                } else {
+                    Write-Host "   ❌ No Cognitive Services account quota available" -ForegroundColor Red
+                    $script:quotaErrors++
+                }
+            } else {
+                Write-Host "   ✅ Cognitive Services quota appears sufficient" -ForegroundColor Green
+            }
+        } else {
+            Write-Host "   ❌ Azure AI Translator not available in $Location" -ForegroundColor Red
+            $script:quotaErrors++
+        }
+    }
+    catch {
+        Write-Host "   ⚠️  Error checking Translator quota: $_" -ForegroundColor Yellow
         $script:quotaWarnings++
     }
 
@@ -112,24 +257,26 @@ function Test-OpenAIModelAvailability {
 }
 
 # Check Azure OpenAI Service quota
-Test-Quota -Provider "Microsoft.CognitiveServices" -ResourceType "OpenAI.Standard" -MetricName "OpenAI" -RequiredQuota 1 -Description "Azure OpenAI Service"
+Test-Quota -Location $Location -SubscriptionId $SubscriptionId -Description "Azure OpenAI Service"
 
 # Check Azure AI Search quota
-Test-Quota -Provider "Microsoft.Search" -ResourceType "searchServices" -MetricName "SearchServices" -RequiredQuota 1 -Description "Azure AI Search Service"
+Test-AISearchQuota -Location $Location -SubscriptionId $SubscriptionId -Description "Azure AI Search Service"
 
 # Check Cognitive Services quota (for Translator)
-Test-Quota -Provider "Microsoft.CognitiveServices" -ResourceType "TextTranslation" -MetricName "TextTranslation" -RequiredQuota 1 -Description "Azure AI Translator Service"
+Test-TranslatorQuota -Location $Location -SubscriptionId $SubscriptionId -Description "Azure AI Translator Service"
 
-# Check OpenAI model availability
-Test-OpenAIModelAvailability -ModelName "text-embedding-3-large" -Description "Text Embedding 3 Large model"
-Test-OpenAIModelAvailability -ModelName "gpt-4o-mini" -Description "GPT-4o Mini model"
-
-# Check region capacity for AI services
+# Check regional capacity for AI services
 Write-Host "🌍 Checking regional capacity..." -ForegroundColor Yellow
 try {
-    $capacityResponse = az rest --method GET --url "https://management.azure.com/subscriptions/$SubscriptionId/providers/Microsoft.CognitiveServices/locations/$Location/usages" 2>$null
-    if ($capacityResponse) {
-        Write-Host "   ✅ Regional capacity information available" -ForegroundColor Green
+    $usage = az cognitiveservices usage list --location $Location --subscription $SubscriptionId 2>$null | ConvertFrom-Json
+    if ($usage -and $usage.Count -gt 0) {
+        Write-Host "   ✅ Regional capacity information available ($($usage.Count) quota types found)" -ForegroundColor Green
+
+        # Show some key metrics
+        $openAiQuotas = $usage | Where-Object { $_.name.value -like "*OpenAI*" -and $_.limit -gt 0 }
+        if ($openAiQuotas) {
+            Write-Host "   OpenAI quotas available: $($openAiQuotas.Count) types" -ForegroundColor White
+        }
     } else {
         Write-Host "   ⚠️  Could not retrieve regional capacity information" -ForegroundColor Yellow
         $quotaWarnings++

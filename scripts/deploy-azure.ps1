@@ -53,6 +53,87 @@ if ($SubscriptionId) {
     Write-Host "✅ Active subscription set to: $SubscriptionId" -ForegroundColor Green
 }
 
+# Check OpenAI quota and select region with availability
+Write-Host "🔍 Checking OpenAI quota across regions..." -ForegroundColor Cyan
+
+function Test-OpenAIQuota {
+    param(
+        [string]$Region,
+        [string]$SubscriptionId
+    )
+    
+    try {
+        Write-Host "   Testing $Region..." -ForegroundColor Gray
+        
+        # Get quota usage for the region
+        $usage = az cognitiveservices usage list --location $Region --subscription $SubscriptionId 2>$null | ConvertFrom-Json
+        
+        if (-not $usage) {
+            Write-Host "     ❌ ${Region}: Could not retrieve quota information" -ForegroundColor Red
+            return $false
+        }
+        
+        # Check for our required models
+        $gpt4oMiniQuota = $usage | Where-Object { $_.name.value -like "*gpt-4o-mini*" -and $_.limit -gt 0 }
+        $embeddingQuota = $usage | Where-Object { $_.name.value -like "*text-embedding-3-large*" -and $_.limit -gt 0 }
+        
+        if ($gpt4oMiniQuota -and $embeddingQuota) {
+            $maxGptQuota = ($gpt4oMiniQuota | Measure-Object -Property limit -Maximum).Maximum
+            $maxEmbeddingQuota = ($embeddingQuota | Measure-Object -Property limit -Maximum).Maximum
+            
+            Write-Host "     ✅ ${Region}: GPT-4o-mini ($maxGptQuota TPM), text-embedding-3-large ($maxEmbeddingQuota TPM)" -ForegroundColor Green
+            return $true
+        } else {
+            $missingModels = @()
+            if (-not $gpt4oMiniQuota) { $missingModels += "gpt-4o-mini" }
+            if (-not $embeddingQuota) { $missingModels += "text-embedding-3-large" }
+            
+            Write-Host "     ❌ ${Region}: Missing quota for $($missingModels -join ', ')" -ForegroundColor Red
+            return $false
+        }
+    }
+    catch {
+        Write-Host "     ❌ ${Region}: Error checking quota - $($_.Exception.Message)" -ForegroundColor Red
+        return $false
+    }
+}
+
+# Priority regions for OpenAI (based on Microsoft documentation)
+$regions = @(
+    "eastus",
+    "eastus2", 
+    "westus",
+    "westus2", 
+    "westus3",
+    "centralus",
+    "southcentralus",
+    "northcentralus",
+    "westeurope",
+    "francecentral",
+    "uksouth",
+    "swedencentral",
+    "switzerlandnorth",
+    "australiaeast",
+    "japaneast",
+    "canadacentral",
+    "canadaeast"
+)
+
+$selectedRegion = $null
+foreach ($region in $regions) {
+    if (Test-OpenAIQuota -Region $region -SubscriptionId $SubscriptionId) {
+        $selectedRegion = $region
+        break
+    }
+}
+
+if (-not $selectedRegion) {
+    Write-Host "❌ No regions found with available OpenAI quota. Please try again later or request quota increase." -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "🎯 Selected region for OpenAI deployment: $selectedRegion" -ForegroundColor Green
+
 # Pre-flight quota check
 if (-not $SkipQuotaCheck) {
     Write-Host "🔍 Running pre-flight quota check..." -ForegroundColor Yellow
@@ -66,6 +147,48 @@ if (-not $SkipQuotaCheck) {
     } else {
         Write-Warning "⚠️  Quota check script not found. Proceeding without validation."
     }
+}
+
+# Pre-flight Key Vault cleanup check
+Write-Host "🔍 Checking for deleted Key Vaults that need cleanup..." -ForegroundColor Yellow
+$keyVaultName = "$ProjectName-kv-$Environment"
+$deletedVaults = az keyvault list-deleted --subscription $SubscriptionId --query "[?name=='$keyVaultName']" -o json 2>$null
+if ($deletedVaults -and $deletedVaults -ne "[]") {
+    Write-Host "⚠️  Found deleted Key Vault: $keyVaultName" -ForegroundColor Yellow
+    Write-Host "🧹 Purging deleted Key Vault to avoid conflicts..." -ForegroundColor Yellow
+
+    $vaultDetails = $deletedVaults | ConvertFrom-Json
+    foreach ($vault in $vaultDetails) {
+        $vaultLocation = $vault.properties.location
+        Write-Host "   Purging: $keyVaultName in $vaultLocation" -ForegroundColor Gray
+        az keyvault purge --name $keyVaultName --location $vaultLocation --subscription $SubscriptionId --no-wait 2>$null
+    }
+
+    Write-Host "✅ Key Vault purge initiated (background operation)" -ForegroundColor Green
+} else {
+    Write-Host "✅ No deleted Key Vaults found that would conflict" -ForegroundColor Green
+}
+
+# Pre-flight Cognitive Services cleanup check
+Write-Host "🔍 Checking for deleted Cognitive Services that need cleanup..." -ForegroundColor Yellow
+$deletedCogServices = az cognitiveservices account list-deleted --subscription $SubscriptionId -o json 2>$null
+if ($deletedCogServices -and $deletedCogServices -ne "[]") {
+    Write-Host "⚠️  Found deleted Cognitive Services" -ForegroundColor Yellow
+    Write-Host "🧹 Purging deleted Cognitive Services to avoid conflicts..." -ForegroundColor Yellow
+
+    $services = $deletedCogServices | ConvertFrom-Json
+    foreach ($service in $services) {
+        $serviceName = $service.name
+        $serviceLocation = $service.location
+        $resourceGroup = $resourceGroupName
+
+        Write-Host "   Purging: $serviceName in $serviceLocation" -ForegroundColor Gray
+        az cognitiveservices account purge --name $serviceName --resource-group $resourceGroup --location $serviceLocation --subscription $SubscriptionId 2>$null
+    }
+
+    Write-Host "✅ Cognitive Services purge completed" -ForegroundColor Green
+} else {
+    Write-Host "✅ No deleted Cognitive Services found that would conflict" -ForegroundColor Green
 }
 
 # Prepare deployment parameters
@@ -128,6 +251,7 @@ param location = '$Location'
 param environment = '$Environment'
 param projectName = '$ProjectName'
 param resourceGroupName = '$resourceGroupName'
+param openAiLocation = '$selectedRegion'
 param tags = {
   project: '$ProjectName'
   environment: '$Environment'

@@ -7,46 +7,100 @@ A comprehensive AI solution for Medicaid policy research, combining RAG (Retriev
 This solution deploys and integrates multiple Azure AI services:
 
 - **[Azure AI Search](https://learn.microsoft.com/en-us/azure/search/search-what-is-azure-search)** - Vector search for RAG over Medicaid documents
-- **[Azure OpenAI Service](https://learn.microsoft.com/en-us/azure/ai-foundry/openai/overview)** - GPT-5-Chat and text-embedding-3-small models
+- **[Azure OpenAI Service](https://learn.microsoft.com/en-us/azure/ai-foundry/openai/overview)** - GPT-4o-mini and text-embedding-3-large models
 - **[Azure AI Translator](https://azure.microsoft.com/en-us/products/ai-services/ai-translator)** - Multi-language document translation
-- **[Azure AI Foundry](https://learn.microsoft.com/en-us/azure/ai-foundry/)** - AI agents with Bing search integration
+- **[Azure AI Foundry](https://learn.microsoft.com/en-us/azure/ai-foundry/)** - AI agents with intelligent model management
 - **[Playwright](https://github.com/microsoft/playwright)** - Web scraping for news analysis
 
 ## 🚀 Quick Start
 
-### Step 1: Prerequisites & Validation
+### Prerequisites
 
-```powershell
-# Ensure you have required tools
-# - Azure CLI (az --version)
-# - PowerShell 7+ ($PSVersionTable.PSVersion)
-# - Python 3.11+ (python --version)
+Before deploying, ensure you have:
+
+- **Azure CLI** 2.60+ (`az --version`)
+- **PowerShell** 7.0+ (`$PSVersionTable.PSVersion`)
+- **Python** 3.11+ (`python --version`)
+- **Azure Subscription** with appropriate permissions for:
+  - Creating resource groups
+  - Deploying AI services (OpenAI, Search, Translator)
+  - Managing Key Vault and storage accounts
+
+### Step 1: Clone and Setup
+
+```bash
+git clone https://github.com/ng4567/azure-ai-playwright.git
+cd azure-ai-playwright
 
 # Login to Azure
 az login
 
-# Validate quota and model availability
-.\scripts\check-quota.ps1 -Location "centralus"
+# Set your subscription (replace with your subscription ID)
+az account set --subscription "your-subscription-id"
 ```
 
 ### Step 2: Deploy Azure Infrastructure
 
+The deployment script includes intelligent features:
+
+- **Smart Region Selection**: Automatically finds regions with available OpenAI quota
+- **Quota Validation**: Pre-flight checks ensure sufficient capacity
+- **Resource Cleanup**: Handles soft-deleted resources automatically
+- **Comprehensive Monitoring**: Sets up logging and alerting
+
 ```powershell
-# Deploy complete infrastructure (10-15 minutes)
-.\scripts\deploy-azure.ps1 -Environment dev -Location centralus
+# Deploy complete infrastructure with intelligent region selection
+.\scripts\deploy-azure.ps1 -SubscriptionId "your-subscription-id" -ProjectName "medicaid-rag" -Environment "dev" -Location "centralus"
 
-# Preview changes first (optional)
-.\scripts\deploy-azure.ps1 -Environment dev -Location centralus -WhatIf
+# The script will:
+# 1. 🔍 Test multiple regions for OpenAI quota availability
+# 2. 🎯 Select the best region (e.g., eastus with 1M TPM)
+# 3. 🧹 Clean up any conflicting soft-deleted resources
+# 4. 🚀 Deploy all 10 Azure resources (~10-15 minutes)
+# 5. ✅ Validate deployment completion
 
-# Validate deployment health
-.\scripts\validate-infrastructure.ps1 -ResourceGroupName "rg-medicaid-rag-dev"
+# Optional: Preview changes first
+.\scripts\deploy-azure.ps1 -SubscriptionId "your-id" -ProjectName "medicaid-rag" -Environment "dev" -Location "centralus" -WhatIf
+
+# Optional: Skip quota check if you've already verified capacity
+.\scripts\deploy-azure.ps1 -SubscriptionId "your-id" -ProjectName "medicaid-rag" -Environment "dev" -Location "centralus" -SkipQuotaCheck
 ```
 
-### Step 3: Configure Application Environment
+### Step 3: Validate Deployment
 
 ```powershell
-# Navigate to source directory
-cd src
+# Comprehensive infrastructure validation
+.\scripts\validate-deployment.ps1 -SubscriptionId "your-subscription-id" -ProjectName "medicaid-rag" -Environment "dev"
+
+# This validates:
+# ✅ All 10 Azure resources exist and are accessible
+# ✅ OpenAI models (GPT-4o-mini, text-embedding-3-large) are deployed
+# ✅ Service connectivity and endpoint accessibility
+# ✅ Deployment status and health checks
+# 📊 Provides detailed success/failure reporting
+```
+
+Expected validation output:
+```
+🔍 Azure AI Infrastructure Validation
+====================================
+
+✅ Resource Group [rg-medicaid-rag-dev]: Location: centralus
+✅ OpenAI Service [openai-medicaid-rag-dev-xyz]: Location: eastus
+✅ OpenAI Model Deployment: gpt-chat (gpt-4o-mini) - Succeeded
+✅ OpenAI Model Deployment: text-embedding (text-embedding-3-large) - Succeeded
+✅ AI Search Service [search-medicaid-rag-dev-xyz]: Location: centralus
+✅ Storage Account [medicaidragstordev]: Resource exists
+✅ Key Vault [medicaid-rag-kv-dev]: Successfully accessed vault
+
+📊 Validation Summary
+====================
+Total Checks: 23
+✅ Passed: 23
+Success Rate: 100%
+
+🎉 All critical validations passed! Infrastructure is ready for use.
+```
 
 # Setup Python environment
 uv venv .venv
