@@ -1,0 +1,8 @@
+name: medicaid-rag-ai-agent
+metadata:
+  template: medicaid-rag-ai-agent@1.0.0
+workflows:
+  up:
+    - azd: provision
+    - azd: deploy
+services: {}
