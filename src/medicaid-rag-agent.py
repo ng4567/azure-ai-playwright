@@ -33,11 +33,11 @@ embed_client = AzureOpenAI(
 # 3) Create an Azure OpenAI client for chat completions (RAG)
 chat_client = AzureOpenAI(
     api_version="2024-12-01-preview",
-    azure_endpoint="https://nikhi-mcw43lm0-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-5-chat/chat/completions?api-version=2025-01-01-preview",
+    azure_endpoint=os.getenv("CHAT_CLIENT_ENDPOINT"),
     api_key=AOAI_API_KEY
 )
 
-CHAT_MODEL = os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT", "gpt-4o-mini")
+CHAT_MODEL = os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT", "gpt-5-chat")
 
 async def search_documents(query: str, top_k: int = 5):
     """Search the Azure AI Search index for relevant documents"""
