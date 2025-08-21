@@ -66,7 +66,7 @@ uv run ..\data\ingest-data.py
 
 # Test the applications
 uv run medicaid-rag.py        # RAG query system
-uv run scraper.py             # News scraper  
+uv run scraper.py             # News scraper
 uv run bing.py                # AI agent with Bing search
 ```
 

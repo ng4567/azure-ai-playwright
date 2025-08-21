@@ -31,9 +31,9 @@ function Test-AzureResource {
         [string]$Description,
         [scriptblock]$TestScript
     )
-    
+
     Write-Host "🔍 Testing $Description..." -ForegroundColor Yellow
-    
+
     try {
         $result = & $TestScript
         if ($result) {
@@ -71,7 +71,7 @@ Test-AzureResource -ResourceType "OpenAI" -Description "Azure OpenAI Service" -T
     if ($openai -and $openai.Count -gt 0 -and $openai[0].provisioningState -eq "Succeeded") {
         Write-Host "   🤖 Service Name: $($openai[0].name)" -ForegroundColor White
         Write-Host "   🌐 Endpoint: $($openai[0].endpoint)" -ForegroundColor White
-        
+
         # Test model deployments
         $deployments = az cognitiveservices account deployment list --name $openai[0].name --resource-group $ResourceGroupName --query "[].{name:name, model:properties.model.name, status:properties.provisioningState}" -o json 2>$null | ConvertFrom-Json
         if ($deployments) {
@@ -116,7 +116,7 @@ Test-AzureResource -ResourceType "KeyVault" -Description "Azure Key Vault" -Test
     if ($keyvault -and $keyvault.Count -gt 0 -and $keyvault[0].provisioningState -eq "Succeeded") {
         Write-Host "   🔐 Vault Name: $($keyvault[0].name)" -ForegroundColor White
         Write-Host "   🌐 Vault URI: $($keyvault[0].vaultUri)" -ForegroundColor White
-        
+
         # Test access to secrets (will show count only)
         try {
             $secrets = az keyvault secret list --vault-name $keyvault[0].name --query "length(@)" -o tsv 2>$null
@@ -137,7 +137,7 @@ Test-AzureResource -ResourceType "Storage" -Description "Azure Storage Account" 
     if ($storage -and $storage.Count -gt 0 -and $storage[0].provisioningState -eq "Succeeded") {
         Write-Host "   💾 Storage Name: $($storage[0].name)" -ForegroundColor White
         Write-Host "   🌐 Blob Endpoint: $($storage[0].primaryEndpoints.blob)" -ForegroundColor White
-        
+
         # Test docs container
         try {
             $containers = az storage container list --account-name $storage[0].name --query "[?name=='docs'].name" -o tsv 2>$null

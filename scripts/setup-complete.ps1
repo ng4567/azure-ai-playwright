@@ -3,7 +3,7 @@
 
 param(
     [string]$SubscriptionId = $env:AZURE_SUBSCRIPTION_ID,
-    [string]$Location = "centralus", 
+    [string]$Location = "centralus",
     [string]$Environment = "dev",
     [string]$ProjectName = "medicaid-rag",
     [switch]$SkipQuotaCheck,
@@ -90,7 +90,7 @@ Write-Host ""
 if (-not $SkipQuotaCheck) {
     Write-Host "3️⃣  Pre-flight Quota Check..." -ForegroundColor Blue
     Write-Host "==============================" -ForegroundColor Blue
-    
+
     $quotaScript = Join-Path $scriptPath "check-quota.ps1"
     if (Test-Path $quotaScript) {
         & $quotaScript -SubscriptionId $SubscriptionId -Location $Location
@@ -119,13 +119,13 @@ if (Test-Path $deployScript) {
         "-Environment", $Environment
         "-ProjectName", $ProjectName
     )
-    
+
     if ($WhatIf) {
         $deployArgs += "-WhatIf"
     }
-    
+
     & $deployScript @deployArgs
-    
+
     if ($LASTEXITCODE -ne 0) {
         Write-Error "❌ Infrastructure deployment failed"
         exit 1
@@ -141,13 +141,13 @@ Write-Host ""
 if (-not $SkipValidation -and -not $WhatIf) {
     Write-Host "5️⃣  Infrastructure Validation..." -ForegroundColor Blue
     Write-Host "=================================" -ForegroundColor Blue
-    
+
     $resourceGroupName = "rg-$ProjectName-$Environment"
     $validateScript = Join-Path $scriptPath "validate-infrastructure.ps1"
-    
+
     if (Test-Path $validateScript) {
         & $validateScript -ResourceGroupName $resourceGroupName -SubscriptionId $SubscriptionId
-        
+
         if ($LASTEXITCODE -ne 0) {
             Write-Warning "⚠️  Infrastructure validation failed. Check the issues above."
         }
@@ -164,45 +164,45 @@ if (-not $SkipValidation -and -not $WhatIf) {
 if (-not $WhatIf) {
     Write-Host "6️⃣  Environment Setup..." -ForegroundColor Blue
     Write-Host "========================" -ForegroundColor Blue
-    
+
     # Create Python virtual environment
     $srcPath = Join-Path $rootPath "src"
     if (-not (Test-Path $srcPath)) {
         New-Item -ItemType Directory -Path $srcPath -Force | Out-Null
     }
-    
+
     Set-Location $srcPath
-    
+
     # Setup virtual environment
     if (-not (Test-Path ".venv")) {
         Write-Host "   🐍 Creating Python virtual environment..." -ForegroundColor Yellow
         uv venv .venv
     }
-    
+
     # Activate virtual environment
     $activateScript = ".\.venv\Scripts\Activate.ps1"
     if (Test-Path $activateScript) {
         & $activateScript
         Write-Host "   ✅ Virtual environment activated" -ForegroundColor Green
     }
-    
+
     # Install dependencies
     if (Test-Path "..\pyproject.toml") {
         Write-Host "   📦 Installing Python dependencies..." -ForegroundColor Yellow
         uv sync
         Write-Host "   ✅ Dependencies installed" -ForegroundColor Green
     }
-    
+
     # Setup environment file
     $envTemplate = Join-Path $rootPath ".env.template"
     $envFile = ".env"
-    
+
     if ((Test-Path $envTemplate) -and (-not (Test-Path $envFile))) {
         Copy-Item $envTemplate $envFile
         Write-Host "   ✅ Environment file created: $envFile" -ForegroundColor Green
         Write-Host "   ⚠️  Remember to update .env with your service details" -ForegroundColor Yellow
     }
-    
+
     Set-Location $rootPath
     Write-Host ""
 }

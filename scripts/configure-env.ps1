@@ -45,7 +45,7 @@ Write-Host "🔍 Discovering Azure resources..." -ForegroundColor Yellow
 # Function to get resource by type
 function Get-AzureResource {
     param([string]$Type, [string]$FriendlyName)
-    
+
     try {
         $resource = az resource list --resource-group $ResourceGroupName --resource-type $Type --query "[0]" | ConvertFrom-Json
         if ($resource) {
@@ -64,7 +64,7 @@ function Get-AzureResource {
 # Function to get Key Vault secret
 function Get-KeyVaultSecret {
     param([string]$VaultName, [string]$SecretName)
-    
+
     try {
         $secret = az keyvault secret show --vault-name $VaultName --name $SecretName --query "value" -o tsv 2>$null
         return $secret
@@ -98,7 +98,7 @@ $envVars = @{}
 
 if ($keyVault) {
     $vaultName = $keyVault.name
-    
+
     # OpenAI secrets
     if ($openAI) {
         $envVars['AZURE_OPENAI_ENDPOINT'] = Get-KeyVaultSecret $vaultName "openai-endpoint"
@@ -106,14 +106,14 @@ if ($keyVault) {
         $envVars['AZURE_OPENAI_CHAT_DEPLOYMENT'] = Get-KeyVaultSecret $vaultName "openai-chat-deployment"
         $envVars['AZURE_OPENAI_EMBEDDING_DEPLOYMENT'] = Get-KeyVaultSecret $vaultName "openai-embedding-deployment"
     }
-    
+
     # Search secrets
     if ($search) {
         $envVars['AZURE_SEARCH_ENDPOINT'] = Get-KeyVaultSecret $vaultName "search-endpoint"
         $envVars['AZURE_SEARCH_ADMIN_KEY'] = Get-KeyVaultSecret $vaultName "search-admin-key"
         $envVars['AZURE_SEARCH_QUERY_KEY'] = Get-KeyVaultSecret $vaultName "search-query-key"
     }
-    
+
     # Translator secrets
     if ($translator) {
         $envVars['AZURE_TRANSLATOR_ENDPOINT'] = Get-KeyVaultSecret $vaultName "translator-endpoint"

@@ -33,23 +33,23 @@ function Test-Quota {
         [int]$RequiredQuota,
         [string]$Description
     )
-    
+
     Write-Host "🔍 Checking $Description..." -ForegroundColor Yellow
-    
+
     try {
         # Get current quota usage
         $quotaResponse = az rest --method GET --url "https://management.azure.com/subscriptions/$SubscriptionId/providers/$Provider/locations/$Location/quotas/$ResourceType" --query "properties" 2>$null
-        
+
         if ($quotaResponse) {
             $quota = $quotaResponse | ConvertFrom-Json
             $currentUsage = $quota.currentUsage
             $limit = $quota.limit
             $available = $limit - $currentUsage
-            
+
             Write-Host "   Current Usage: $currentUsage" -ForegroundColor White
             Write-Host "   Quota Limit: $limit" -ForegroundColor White
             Write-Host "   Available: $available" -ForegroundColor White
-            
+
             if ($available -ge $RequiredQuota) {
                 Write-Host "   ✅ Sufficient quota available" -ForegroundColor Green
             } elseif ($available -gt 0) {
@@ -68,7 +68,7 @@ function Test-Quota {
         Write-Host "   ⚠️  Error checking quota: $_" -ForegroundColor Yellow
         $script:quotaWarnings++
     }
-    
+
     Write-Host ""
 }
 
@@ -78,13 +78,13 @@ function Test-OpenAIModelAvailability {
         [string]$ModelName,
         [string]$Description
     )
-    
+
     Write-Host "🤖 Checking $Description availability..." -ForegroundColor Yellow
-    
+
     try {
         # Check model availability in the region
         $modelsResponse = az rest --method GET --url "https://management.azure.com/subscriptions/$SubscriptionId/providers/Microsoft.CognitiveServices/locations/$Location/models" --query "value[?name=='$ModelName']" 2>$null
-        
+
         if ($modelsResponse) {
             $models = $modelsResponse | ConvertFrom-Json
             if ($models.Count -gt 0) {
@@ -107,7 +107,7 @@ function Test-OpenAIModelAvailability {
         Write-Host "   ⚠️  Error checking model availability: $_" -ForegroundColor Yellow
         $script:quotaWarnings++
     }
-    
+
     Write-Host ""
 }
 

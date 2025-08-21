@@ -95,7 +95,7 @@ Write-Host ""
 # Clean previous deployments if requested
 if ($Clean) {
     Write-Host "🧹 Cleaning previous deployments..." -ForegroundColor Yellow
-    
+
     # Check if resource group exists
     $rgExists = az group exists --name $resourceGroupName --query "." -o tsv
     if ($rgExists -eq "true") {
@@ -105,7 +105,7 @@ if ($Clean) {
     } else {
         Write-Host "   ℹ️  Resource group does not exist: $resourceGroupName" -ForegroundColor Blue
     }
-    
+
     # Wait for deletion to complete
     Write-Host "   ⏳ Waiting for resource group deletion..." -ForegroundColor Yellow
     do {
@@ -113,7 +113,7 @@ if ($Clean) {
         $rgExists = az group exists --name $resourceGroupName --query "." -o tsv
         Write-Host "   ..." -ForegroundColor Gray
     } while ($rgExists -eq "true")
-    
+
     Write-Host "   ✅ Resource group deleted successfully" -ForegroundColor Green
     Write-Host ""
 }
@@ -165,13 +165,13 @@ Write-Host ""
 # What-If mode
 if ($WhatIf) {
     Write-Host "👀 Running What-If deployment analysis..." -ForegroundColor Cyan
-    
+
     az deployment sub what-if `
         --location $Location `
         --template-file $mainBicepFile `
         --parameters $parametersFile `
         --name $deploymentName
-    
+
     Write-Host ""
     Write-Host "📊 What-If analysis complete. No actual deployment performed." -ForegroundColor Blue
     exit 0
@@ -208,9 +208,9 @@ try {
     if ($deploymentResult.properties.outputs) {
         Write-Host "📋 Deployment Outputs:" -ForegroundColor Cyan
         Write-Host "======================" -ForegroundColor Cyan
-        
+
         $outputs = $deploymentResult.properties.outputs
-        
+
         if ($outputs.resourceGroupName) {
             Write-Host "   Resource Group: $($outputs.resourceGroupName.value)" -ForegroundColor White
         }
@@ -226,7 +226,7 @@ try {
         if ($outputs.keyVaultName) {
             Write-Host "   Key Vault: $($outputs.keyVaultName.value)" -ForegroundColor White
         }
-        
+
         Write-Host ""
     }
 
@@ -243,7 +243,7 @@ try {
 } catch {
     $endTime = Get-Date
     $duration = $endTime - $startTime
-    
+
     Write-Host ""
     Write-Error "❌ Infrastructure deployment failed after $($duration.ToString('mm\:ss'))"
     Write-Host ""
@@ -252,6 +252,6 @@ try {
     Write-Host "2. Verify Azure permissions for resource creation" -ForegroundColor White
     Write-Host "3. Review deployment logs in Azure Portal" -ForegroundColor White
     Write-Host "4. Try a different region if quota is exhausted" -ForegroundColor White
-    
+
     exit 1
 }

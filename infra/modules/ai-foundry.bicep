@@ -73,15 +73,7 @@ resource aiHubDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-prev
     workspaceId: logAnalyticsWorkspaceId
     logs: [
       {
-        category: 'AmlComputeClusterEvent'
-        enabled: true
-      }
-      {
-        category: 'AmlComputeClusterNodeEvent'
-        enabled: true
-      }
-      {
-        category: 'AmlComputeJobEvent'
+        categoryGroup: 'allLogs'
         enabled: true
       }
     ]
