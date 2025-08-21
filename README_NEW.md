@@ -14,95 +14,86 @@ This solution deploys and integrates multiple Azure AI services:
 
 ## 🚀 Quick Start
 
-### Step 1: Prerequisites & Validation
+### Step 1: Deploy Azure Infrastructure
 
 ```powershell
-# Ensure you have required tools
-# - Azure CLI (az --version)
-# - PowerShell 7+ ($PSVersionTable.PSVersion)
-# - Python 3.11+ (python --version)
+# Prerequisites: Azure CLI, Azure Developer CLI
+# Install: https://aka.ms/azd
 
-# Login to Azure
-az login
+# Clone and navigate to repository
+git clone https://github.com/ng4567/azure-ai-playwright.git
+cd azure-ai-playwright
 
-# Validate quota and model availability
-.\scripts\check-quota.ps1 -Location "centralus"
+# Initialize and deploy infrastructure
+azd auth login
+azd init --template . --environment dev
+azd up
 ```
 
-### Step 2: Deploy Azure Infrastructure
+### Step 2: Configure Services
 
 ```powershell
-# Deploy complete infrastructure (10-15 minutes)
-.\scripts\deploy-azure.ps1 -Environment dev -Location centralus
+# Run automated post-deployment configuration
+scripts/post-deploy-setup.ps1
 
-# Preview changes first (optional)
-.\scripts\deploy-azure.ps1 -Environment dev -Location centralus -WhatIf
+# Configure Azure AI Foundry agent (manual step)
+# See docs/POST_DEPLOYMENT_CONFIG.md for details
 
-# Validate deployment health
-.\scripts\validate-infrastructure.ps1 -ResourceGroupName "rg-medicaid-rag-dev"
+# Ingest Medicaid documents into search index
+.\.venv\Scripts\activate.ps1
+uv run data/ingest-data.py
 ```
 
-### Step 3: Configure Application Environment
+### Step 3: Local Development
 
 ```powershell
-# Navigate to source directory
-cd src
-
 # Setup Python environment
 uv venv .venv
 .\.venv\Scripts\activate.ps1
 uv sync
 
 # Copy and configure environment variables
-Copy-Item ..\.env.template .env
-# Edit .env with your deployed service details (check Key Vault for secrets)
-```
+Copy-Item .env.template .env
+# Edit .env with deployed service endpoints (auto-populated by scripts)
 
-### Step 4: Ingest Data & Test
+# Validate deployment
+scripts/validate-deployment.ps1
 
-```powershell
-# Ingest Medicaid documents into search index
-uv run ..\data\ingest-data.py
-
-# Test the applications
+# Start using the applications!
 uv run medicaid-rag.py        # RAG query system
-uv run scraper.py             # News scraper  
+uv run scraper.py             # News scraper
 uv run bing.py                # AI agent with Bing search
 ```
 
 ## 💡 Applications
 
-### 1. `src/medicaid-rag.py` - RAG Query System
-
+### 1. `medicaid-rag.py` - RAG Query System
 - **Purpose**: Search Medicaid documents using natural language
 - **Features**: Multi-language translation, semantic search, contextual answers
-- **Usage**: `uv run src/medicaid-rag.py`
+- **Usage**: `uv run medicaid-rag.py`
 
-### 2. `src/scraper.py` - News Scraper
-
+### 2. `scraper.py` - News Scraper
 - **Purpose**: Scrape Google News for Medicaid policy updates
 - **Features**: Automated news collection, text extraction
-- **Usage**: `uv run src/scraper.py`
+- **Usage**: `uv run scraper.py`
 
-### 3. `src/bing.py` - AI Agent Search
-
+### 3. `bing.py` - AI Agent Search
 - **Purpose**: AI agent that searches Bing for current Medicaid news
 - **Features**: Real-time web search, summarized results with sources
-- **Usage**: `uv run src/bing.py`
+- **Usage**: `uv run bing.py`
 
 ## 📁 Project Structure
 
-```text
+```
 azure-ai-playwright/
 ├── data/                    # Medicaid documents for ingestion
 ├── docs/                    # Comprehensive documentation
 ├── scripts/                 # Deployment and configuration automation
-├── src/                     # Python applications
-│   ├── medicaid-rag.py     # RAG query system
-│   ├── scraper.py          # News scraping application
-│   └── bing.py             # AI agent application
 ├── .env.template           # Environment variables template
 ├── azure.yaml              # Azure Developer CLI configuration
+├── medicaid-rag.py         # RAG application
+├── scraper.py              # News scraping application
+├── bing.py                 # AI agent application
 └── TODO.md                 # Future enhancements
 ```
 

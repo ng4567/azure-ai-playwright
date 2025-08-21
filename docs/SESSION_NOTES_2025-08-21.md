@@ -3,11 +3,11 @@
 ## Session Goals
 
 - ✅ Update infrastructure markdown files for Medicaid RAG + AI Agent solution
-- ✅ Transform documentation from generic template to AI-specific guidance  
+- ✅ Transform documentation from generic template to AI-specific guidance
 - ✅ Create deployment automation framework
 - ✅ Organize project structure and prepare for infrastructure development
-
-## What We Accomplished
+- 🚧 Build Bicep infrastructure modules for Azure AI services
+- 🚧 Create pre-flight quota checking script## What We Accomplished
 
 ### 📋 Documentation Transformation
 - **README.md**: Complete rewrite from local-only to infrastructure-first workflow
@@ -50,7 +50,7 @@
 - Cons: Requires Azure subscription and initial setup complexity
 
 ### ADR-0004: Source Code Organization
-**Status:** Accepted  
+**Status:** Accepted
 
 **Context:** Need clear separation between infrastructure and application code
 
@@ -60,16 +60,38 @@
 - Pros: Clear project structure, aligns with best practices
 - Cons: Requires path updates in documentation and scripts
 
-### ADR-0005: Automation-First Configuration
+### ADR-0006: Foundry-Centric AI Infrastructure
 **Status:** Accepted
 
-**Context:** AI services require complex post-deployment configuration
+**Context:** Need to deploy Azure AI services with proper integration and management
 
-**Decision:** Create PowerShell scripts for all repeatable configuration tasks
+**Decision:** Use Azure AI Foundry (AI Hub + AI Project) as central container for AI services
 
 **Consequences:**
-- Pros: Reproducible deployments, reduced manual errors
-- Cons: Platform-specific scripts (Windows focus)
+- Pros: Integrated AI service management, centralized governance, better service coordination
+- Cons: Newer service with potential limitations, requires understanding of Foundry architecture
+
+### ADR-0007: Automated Model Deployment with Quota Management
+**Status:** Accepted
+
+**Context:** OpenAI model deployments require quota and can fail due to capacity limits
+
+**Decision:** Automate model deployment in Bicep with pre-flight quota checking script
+
+**Consequences:**
+- Pros: Fully automated deployment, early quota validation, reduced deployment failures
+- Cons: Additional complexity, region-specific quota management needed
+
+### ADR-0008: Storage Account for RAG Data Pipeline
+**Status:** Accepted
+
+**Context:** Need storage for document ingestion and AI Search indexing pipeline
+
+**Decision:** Deploy Storage Account with dedicated /docs container for RAG data
+
+**Consequences:**
+- Pros: Centralized data management, supports future indexing automation
+- Cons: Additional storage costs, requires data management practices
 
 ## Issues Encountered
 
@@ -84,9 +106,15 @@
 ## Next Steps
 
 - ✅ **COMPLETED**: Project organization and documentation scaffold
-- 🚧 **NEXT**: Create Bicep infrastructure templates for Azure AI services
-- 🚧 **NEXT**: Implement actual automation scripts (currently placeholders)
-- 🚧 **NEXT**: Add environment-specific parameter files
+- 🚧 **IN PROGRESS**: Create Bicep infrastructure templates for Azure AI services
+  - Azure AI Foundry (AI Hub + AI Project) as central container
+  - Azure OpenAI with text-embedding-3-large + gpt-4o-mini models
+  - Azure AI Search with vector search configuration
+  - Azure AI Translator integrated with AI Hub
+  - Storage Account with /docs container for RAG indexing
+  - Key Vault and Log Analytics for security and monitoring
+- 🚧 **IN PROGRESS**: Build pre-flight quota checking script
+- 🚧 **NEXT**: Implement actual automation scripts (update placeholders)
 - 🚧 **NEXT**: Test end-to-end deployment workflow
 
 ## Context Updates Needed
@@ -98,7 +126,7 @@
 ## Infrastructure Services Documented
 
 - **Azure AI Search**: Vector search for RAG over Medicaid documents
-- **Azure OpenAI**: GPT-5-Chat and text-embedding-3-small models  
+- **Azure OpenAI**: GPT-5-Chat and text-embedding-3-small models
 - **Azure AI Translator**: Multi-language document translation
 - **Azure AI Foundry**: AI agents with Bing search integration
 - **Azure Key Vault**: Secure secrets management
@@ -107,7 +135,7 @@
 ## Development Workflow Established
 
 1. **Deploy Infrastructure**: `azd up`
-2. **Configure Services**: `scripts/post-deploy-setup.ps1`  
+2. **Configure Services**: `scripts/post-deploy-setup.ps1`
 3. **Validate Setup**: `scripts/validate-deployment.ps1`
 4. **Ingest Data**: `uv run data/ingest-data.py`
 5. **Local Development**: `uv run src/*.py`

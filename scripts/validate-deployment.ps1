@@ -51,7 +51,7 @@ if ($env:AZURE_SEARCH_ENDPOINT) {
             -Headers @{"api-key" = $env:AZURE_SEARCH_ADMIN_KEY} `
             -Method GET -ErrorAction Stop
         Write-Host "✅ AI Search service accessible" -ForegroundColor Green
-        
+
         # Check for medicaid index
         $medicaidIndex = $response.value | Where-Object { $_.name -eq "md-medicaid" }
         if ($medicaidIndex) {
@@ -78,18 +78,18 @@ if ($env:AZURE_OPENAI_ENDPOINT -and $env:AZURE_OPENAI_API_KEY) {
         $response = Invoke-RestMethod -Uri "$($env:AZURE_OPENAI_ENDPOINT)/openai/deployments?api-version=2023-05-15" `
             -Headers $headers -Method GET -ErrorAction Stop
         Write-Host "✅ OpenAI service accessible" -ForegroundColor Green
-        
+
         # Check for required deployments
         $embedModel = $response.data | Where-Object { $_.id -eq $env:AZURE_OPENAI_EMBED_DEPLOYMENT }
         $chatModel = $response.data | Where-Object { $_.id -eq $env:AZURE_OPENAI_CHAT_DEPLOYMENT }
-        
+
         if ($embedModel) {
             Write-Host "✅ Embedding model deployed: $($env:AZURE_OPENAI_EMBED_DEPLOYMENT)" -ForegroundColor Green
         } else {
             Write-Host "❌ Embedding model not found: $($env:AZURE_OPENAI_EMBED_DEPLOYMENT)" -ForegroundColor Red
             $errors++
         }
-        
+
         if ($chatModel) {
             Write-Host "✅ Chat model deployed: $($env:AZURE_OPENAI_CHAT_DEPLOYMENT)" -ForegroundColor Green
         } else {

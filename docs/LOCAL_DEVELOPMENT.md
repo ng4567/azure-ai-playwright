@@ -45,7 +45,7 @@ scripts/validate-deployment.ps1
 
 # Should confirm:
 # ✅ AI Search service accessible
-# ✅ OpenAI models deployed and accessible  
+# ✅ OpenAI models deployed and accessible
 # ✅ AI Foundry agent configured
 # ✅ All authentication working
 ```
@@ -110,10 +110,10 @@ uv run src/bing.py
    ```powershell
    # For RAG queries
    uv run src/medicaid-rag.py
-   
+
    # For news scraping
    uv run src/scraper.py
-   
+
    # For AI agent search
    uv run src/bing.py
    ```
@@ -202,7 +202,7 @@ Monitor your Azure service usage:
 # Check AI Search query usage
 az monitor metrics list --resource your-search-service-resource-id
 
-# Check OpenAI token usage  
+# Check OpenAI token usage
 az monitor metrics list --resource your-openai-service-resource-id
 ```
 
