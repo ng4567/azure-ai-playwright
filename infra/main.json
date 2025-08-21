@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.37.4.10188",
-      "templateHash": "3859185462333658620"
+      "templateHash": "6506773120022990112"
     }
   },
   "parameters": {
@@ -825,15 +825,15 @@
             "_generator": {
               "name": "bicep",
               "version": "0.37.4.10188",
-              "templateHash": "9513580888493448587"
+              "templateHash": "14411783958953467785"
             }
           },
           "parameters": {
             "location": {
               "type": "string",
-              "defaultValue": "[resourceGroup().location]",
+              "defaultValue": "eastus",
               "metadata": {
-                "description": "Azure OpenAI Service for Medicaid RAG + AI Agent solution"
+                "description": "Location for OpenAI service - East US has better quota availability for OpenAI services"
               }
             },
             "projectName": {
@@ -1102,7 +1102,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.37.4.10188",
-              "templateHash": "6876791558334825570"
+              "templateHash": "8819110206706624690"
             }
           },
           "parameters": {
@@ -1254,10 +1254,6 @@
                 "logs": [
                   {
                     "category": "OperationLogs",
-                    "enabled": true
-                  },
-                  {
-                    "category": "SearchSlowLogs",
                     "enabled": true
                   }
                 ],

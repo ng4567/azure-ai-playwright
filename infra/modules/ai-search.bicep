@@ -99,10 +99,6 @@ resource searchDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-pre
         category: 'OperationLogs'
         enabled: true
       }
-      {
-        category: 'SearchSlowLogs'
-        enabled: true
-      }
     ]
     metrics: [
       {

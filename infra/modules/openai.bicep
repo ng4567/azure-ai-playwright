@@ -1,5 +1,7 @@
-@description('Azure OpenAI Service for Medicaid RAG + AI Agent solution')
-param location string = resourceGroup().location
+// Azure OpenAI Service for Medicaid RAG + AI Agent solution
+
+@description('Location for OpenAI service - East US has better quota availability for OpenAI services')
+param location string = 'eastus'
 param projectName string
 param environment string
 param tags object = {}
