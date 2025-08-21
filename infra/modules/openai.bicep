@@ -59,7 +59,7 @@ resource chatDeployment 'Microsoft.CognitiveServices/accounts/deployments@2023-0
   }
 }
 
-// Text embedding model deployment  
+// Text embedding model deployment
 resource embeddingDeployment 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = {
   parent: openAIService
   name: 'text-embedding'
@@ -134,20 +134,12 @@ resource openAIDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-pre
       {
         categoryGroup: 'allLogs'
         enabled: true
-        retentionPolicy: {
-          enabled: false
-          days: 0
-        }
       }
     ]
     metrics: [
       {
         category: 'AllMetrics'
         enabled: true
-        retentionPolicy: {
-          enabled: false
-          days: 0
-        }
       }
     ]
   }

@@ -75,36 +75,20 @@ resource aiHubDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-prev
       {
         category: 'AmlComputeClusterEvent'
         enabled: true
-        retentionPolicy: {
-          days: 30
-          enabled: true
-        }
       }
       {
         category: 'AmlComputeClusterNodeEvent'
         enabled: true
-        retentionPolicy: {
-          days: 30
-          enabled: true
-        }
       }
       {
         category: 'AmlComputeJobEvent'
         enabled: true
-        retentionPolicy: {
-          days: 30
-          enabled: true
-        }
       }
     ]
     metrics: [
       {
         category: 'AllMetrics'
         enabled: true
-        retentionPolicy: {
-          days: 30
-          enabled: true
-        }
       }
     ]
   }

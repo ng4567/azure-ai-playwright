@@ -29,7 +29,6 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     enableRbacAuthorization: true
     enableSoftDelete: true
     softDeleteRetentionInDays: 7
-    enablePurgeProtection: false
     enabledForDeployment: false
     enabledForDiskEncryption: false
     enabledForTemplateDeployment: true
@@ -51,28 +50,16 @@ resource keyVaultDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-p
       {
         category: 'AuditEvent'
         enabled: true
-        retentionPolicy: {
-          days: 30
-          enabled: true
-        }
       }
       {
         category: 'AzurePolicyEvaluationDetails'
         enabled: true
-        retentionPolicy: {
-          days: 30
-          enabled: true
-        }
       }
     ]
     metrics: [
       {
         category: 'AllMetrics'
         enabled: true
-        retentionPolicy: {
-          days: 30
-          enabled: true
-        }
       }
     ]
   }

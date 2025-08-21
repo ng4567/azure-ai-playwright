@@ -98,28 +98,16 @@ resource searchDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-pre
       {
         category: 'OperationLogs'
         enabled: true
-        retentionPolicy: {
-          enabled: false
-          days: 0
-        }
       }
       {
         category: 'SearchSlowLogs'
         enabled: true
-        retentionPolicy: {
-          enabled: false
-          days: 0
-        }
       }
     ]
     metrics: [
       {
         category: 'AllMetrics'
         enabled: true
-        retentionPolicy: {
-          enabled: false
-          days: 0
-        }
       }
     ]
   }

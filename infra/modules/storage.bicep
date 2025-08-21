@@ -89,10 +89,6 @@ resource storageAccountDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-0
       {
         category: 'Transaction'
         enabled: true
-        retentionPolicy: {
-          days: 30
-          enabled: true
-        }
       }
     ]
   }
@@ -108,36 +104,20 @@ resource blobDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-previ
       {
         category: 'StorageRead'
         enabled: true
-        retentionPolicy: {
-          days: 30
-          enabled: true
-        }
       }
       {
         category: 'StorageWrite'
         enabled: true
-        retentionPolicy: {
-          days: 30
-          enabled: true
-        }
       }
       {
         category: 'StorageDelete'
         enabled: true
-        retentionPolicy: {
-          days: 30
-          enabled: true
-        }
       }
     ]
     metrics: [
       {
         category: 'Transaction'
         enabled: true
-        retentionPolicy: {
-          days: 30
-          enabled: true
-        }
       }
     ]
   }
