@@ -6,7 +6,9 @@ from azure.ai.translation.text import TextTranslationClient
 from azure.core.credentials import AzureKeyCredential
 from azure.core.exceptions import HttpResponseError
 
-load_dotenv()
+# Find repo root by going one level up from src/
+dotenv_path = os.path.join(os.path.dirname(__file__), "..", ".env")
+load_dotenv(dotenv_path)
 
 # --- Azure AI Search config ---
 AZURE_AI_SEARCH_ENDPOINT = os.getenv("AZURE_SEARCH_ENDPOINT") or os.getenv("AZURE_AI_SEARCH_ENDPOINT")
@@ -27,8 +29,6 @@ embed_client = AzureOpenAI(
     api_version=AOAI_API_VERSION,
     azure_endpoint=AOAI_ENDPOINT,
 )
-
-
 
 # 3) Create an Azure OpenAI client for chat completions (RAG)
 chat_client = AzureOpenAI(

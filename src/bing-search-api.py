@@ -3,7 +3,10 @@ from azure.identity import DefaultAzureCredential
 from azure.ai.agents.models import ListSortOrder, Tool
 import os
 from dotenv import load_dotenv
-load_dotenv()
+
+# Find repo root by going one level up from src/
+dotenv_path = os.path.join(os.path.dirname(__file__), "..", ".env")
+load_dotenv(dotenv_path)
 
 project = AIProjectClient(
     credential=DefaultAzureCredential(),

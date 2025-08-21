@@ -19,7 +19,9 @@ from azure.search.documents.indexes.models import (
     SearchField,
 )
 from pathlib import Path
-load_dotenv()
+# Find repo root by going one level up from src/
+dotenv_path = os.path.join(os.path.dirname(__file__), "..", ".env")
+load_dotenv(dotenv_path)
 
 service_endpoint = os.getenv("AZURE_SEARCH_ENDPOINT")
 search_admin_key = os.getenv("AZURE_SEARCH_ADMIN_KEY")
